@@ -1,0 +1,8 @@
+# Module: panw
+# Docs: https://www.elastic.co/guide/en/beats/filebeat/7.6/filebeat-module-panw.html
+
+- module: panw
+  panos:
+    enabled: true
+    var.syslog_host: 0.0.0.0
+    var.syslog_port: 2514

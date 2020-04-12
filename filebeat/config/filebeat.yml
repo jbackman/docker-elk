@@ -1,0 +1,35 @@
+flebeat.input:
+- type: syslog
+  protocol.udp:
+      host: "0.0.0.0:5514"
+      tags: ["syslog5514"]
+- type: syslog
+  protocol.tcp:
+      host: "0.0.0.0:5514"
+      tags: ["syslog5514"]
+
+filebeat.config:
+  modules:
+    path: ${path.config}/modules.d/*.yml
+    reload.enabled: true
+
+processors:
+- add_cloud_metadata: ~
+- add_docker_metadata: ~
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+  indices:
+    - index: "panos-%{+yyyy.MM.dd}"
+      when.contains:
+        tags: "pan-os"
+    - index: "syslog-%{+yyyy.MM.dd}"
+      when.contains:
+        tags: "syslog5514"
+    - index: "http-%{+yyyy.MM.dd}"
+      when.contains:
+        tags: "http"
+
+setup.dashboards.enabled: true
+setup.kibana:
+  host: "kibana:5601" 

@@ -8,11 +8,11 @@ services:
         ELK_VERSION: $ELK_VERSION
     volumes:
       - type: bind
-        source: ./elasticsearch/config/elasticsearch.yml
+        source: /volume1/docker/docker-elk/elasticsearch/config/elasticsearch.yml
         target: /usr/share/elasticsearch/config/elasticsearch.yml
         read_only: true
-      - type: volume
-        source: elasticsearch
+      - type: bind
+        source: /volume1/docker/elk-data
         target: /usr/share/elasticsearch/data
     ports:
       - "9200:9200"
@@ -20,8 +20,6 @@ services:
     environment:
       ES_JAVA_OPTS: "-Xmx256m -Xms256m"
       ELASTIC_PASSWORD: changeme
-      # Use single node discovery in order to disable production mode and avoid bootstrap checks
-      # see https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
       discovery.type: single-node
     networks:
       - elk
@@ -33,16 +31,17 @@ services:
         ELK_VERSION: $ELK_VERSION
     volumes:
       - type: bind
-        source: ./logstash/config/logstash.yml
+        source: /volume1/docker/docker-elk/logstash/config/logstash.yml
         target: /usr/share/logstash/config/logstash.yml
         read_only: true
       - type: bind
-        source: ./logstash/pipeline
+        source: /volume1/docker/docker-elk/logstash/pipeline
         target: /usr/share/logstash/pipeline
         read_only: true
     ports:
       - "5000:5000/tcp"
       - "5000:5000/udp"
+      - "6080:6080"
       - "9600:9600"
     environment:
       LS_JAVA_OPTS: "-Xmx256m -Xms256m"
@@ -58,7 +57,7 @@ services:
         ELK_VERSION: $ELK_VERSION
     volumes:
       - type: bind
-        source: ./kibana/config/kibana.yml
+        source: /volume1/docker/docker-elk/kibana/config/kibana.yml
         target: /usr/share/kibana/config/kibana.yml
         read_only: true
     ports:
@@ -68,9 +67,30 @@ services:
     depends_on:
       - elasticsearch
 
+  filebeat:
+    build:
+      context: filebeat/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - type: bind
+        source: /volume1/docker/docker-elk/filebeat/config/filebeat.yml
+        target: /usr/share/filebeat/filebeat.yml
+        read_only: true
+      - type: bind
+        source: /volume1/docker/docker-elk/filebeat/modules.d
+        target: /usr/share/filebeat/modules.d
+        read_only: true
+    ports:
+      - "2514:2514/udp"
+      - "2514:2514/tcp"
+      - "5514:5514/tcp"
+      - "5514:5514/udp"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
 networks:
   elk:
     driver: bridge
-
-volumes:
-  elasticsearch:
