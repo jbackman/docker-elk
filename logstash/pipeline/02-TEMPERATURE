@@ -1,0 +1,19 @@
+
+input {
+    http {
+        port => 6081
+        id => temperature
+        tags => ["temperature"]
+    }
+}
+
+## Add your filters / logstash plugins configuration here
+
+output {
+    if "hubitat" in [tags] {
+        elasticsearch {
+            index => temperature
+            hosts => "elasticsearch:9200"
+        }
+    }
+}
